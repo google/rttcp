@@ -92,12 +92,13 @@ class ConnectionInfo(object):
 
   @classmethod
   def packet_header(cls):
-    return '#%s %s %s %s %s' % (
+    return '#%s %s %s %s %s %s' % (
         'type',
         'src',
         'dst',
         'timestamp',
-        'delta')
+        'delta',
+        'other')
 
   def packet_process_packet(self, packet):
     """Process a packet for this connection (packet mode)."""
@@ -175,8 +176,8 @@ class ConnectionInfo(object):
           # (note that we are reversing src and dst as the information
           # we have right now refers to the ACK, which goes in the reverse
           # direction than the segment we care about)
-          self._f.write('%s %f %s %s %f\n' % ('delta1', timestamp,
-                                              dst, src, delta1))
+          self._f.write('%s %f %s %s %f -\n' % ('delta1', timestamp,
+                                                dst, src, delta1))
       else:
         new_list += [l]
     self._tcp_unacked_segments[dst] = new_list
@@ -225,8 +226,8 @@ class ConnectionInfo(object):
           # (note that we are reversing src and dst as the information
           # we have right now refers to the TSecr, which goes in the reverse
           # direction than the segment we care about)
-          self._f.write('%s %f %s %s %f\n' % ('delta2', timestamp,
-                                              dst, src, delta2))
+          self._f.write('%s %f %s %s %f -\n' % ('delta2', timestamp,
+                                                dst, src, delta2))
       else:
         new_list += [l]
     self._tcp_untsecred_segments[dst] = new_list
@@ -276,23 +277,30 @@ class ConnectionInfo(object):
       # emit delta3 line
       if delta3 > 1.0:
         print 'delta3: should remove [%f, %s]' % (packet.timestamp, delta3)
-      self._f.write('%s %f %s %s %f\n' % ('delta3', packet.timestamp,
-                                          src, dst, delta3))
+      self._f.write('%s %f %s %s %f -\n' % ('delta3', packet.timestamp,
+                                            src, dst, delta3))
 
   def packet_process_delta4(self, src, dst, packet):
     """delta4: match consecutive segments from the same src."""
     if self._ip_total_pkt == 0:
       self._last_timestamp_from = {
-          src: None,
-          dst: None,
+          'ack': {
+              src: None,
+              dst: None,
+          },
+          'data': {
+              src: None,
+              dst: None,
+          },
       }
-    if self._last_timestamp_from[src] is not None:
-      delta4 = packet.timestamp - self._last_timestamp_from[src]
+    traffic = 'ack' if packet.tcp_len == 0 else 'data'
+    if self._last_timestamp_from[traffic][src] is not None:
+      delta4 = packet.timestamp - self._last_timestamp_from[traffic][src]
       if self._analysis_type == 'packet':
         # emit delta4 line
-        self._f.write('%s %f %s %s %f\n' % ('delta4', packet.timestamp,
-                                            src, dst, delta4))
-    self._last_timestamp_from[src] = packet.timestamp
+        self._f.write('%s %f %s %s %f %s\n' % ('delta4', packet.timestamp,
+                                               src, dst, delta4, traffic))
+    self._last_timestamp_from[traffic][src] = packet.timestamp
 
   @classmethod
   def flow_header(cls):

@@ -173,7 +173,7 @@ class Plotter(object):
     i = 0
     for line in f:
       try:
-        t, timestamp, src, dst, delta = line.split()
+        t, timestamp, src, dst, delta, traffic = line.split()
       except ValueError:
         sys.stderr.write('discarding line = "%s"\n' % line)
         continue
@@ -182,10 +182,10 @@ class Plotter(object):
         continue
       if self._debug > 0:
         sys.stderr.write('%s\n' % line)
-      lst += [[i, t, float(timestamp), src, dst, float(delta)]]
+      lst += [[i, t, float(timestamp), src, dst, float(delta), traffic]]
       i += 1
     df = pd.DataFrame(lst, columns=['order', 'type', 'timestamp', 'src', 'dst',
-                                    'delta'])
+                                    'delta', 'traffic'])
     return df
 
   def flow_process_data(self, df):
@@ -320,23 +320,14 @@ class Plotter(object):
     fig.subplots_adjust(hspace=.4)
     fig.canvas.set_window_title('packet_process_data')
 
-    delta_l = ('delta1', 'delta2', 'delta3', 'delta4')
-    print_distro = False
-    graph_l = ['time',]
-    if print_distro:
-      graph_l.append('distro')
-
-    outer_grid = gridspec.GridSpec(2 * (2 if print_distro else 1), 2)
-    if print_distro:
-      position_l = ((0, 0), (1, 0),
-                    (0, 1), (1, 1),
-                    (2, 0), (3, 0),
-                    (2, 1), (3, 1),
-                   )
-    else:
-      position_l = ((0, 0), (0, 1),
-                    (1, 0), (1, 1)
-                   )
+    outer_grid = gridspec.GridSpec(2, 2)
+    layout = [
+        ((0, 0), 'delta1', 'time', '-'),
+        ((0, 1), 'delta2', 'time', '-'),
+        # ((1, 0), 'delta3', 'time', '-'),
+        ((1, 0), 'delta4', 'distro', 'data'),
+        ((1, 1), 'delta4', 'distro', 'ack'),
+    ]
 
     # split the data depending on the direction
     def match_direction(reverse, x):
@@ -350,10 +341,9 @@ class Plotter(object):
     bound_match_direction = partial(match_direction, self._src_reverse)
     df['dir'] = df.apply(bound_match_direction, axis=1)
 
-    i = 0
     ax = {}
     subplot_spec = {}
-    for delta in delta_l:
+    for (position, delta, graph, traffic) in layout:
       ax[delta] = {}
       subplot_spec[delta] = {}
       # get the data frame to analyze here
@@ -364,20 +354,17 @@ class Plotter(object):
           # remove the heads of the trains (hystart_ack_delta in tcp_cubic.c)
           data[direction] = data[direction][(data[direction].delta < 0.002)]
       # print the data frames
-      for graph in graph_l:
-        # ax[delta][graph] = fig.add_subplot(4, 2, position_l[i])
-        subplot_spec[delta][graph] = outer_grid[position_l[i][0],
-                                                position_l[i][1]]
-        ax[delta][graph] = plt.subplot(subplot_spec[delta][graph])
+      # ax[delta][graph] = fig.add_subplot(4, 2, position)
+      subplot_spec[delta][graph] = outer_grid[position[0], position[1]]
+      ax[delta][graph] = plt.subplot(subplot_spec[delta][graph])
 
-        if graph == 'time':
-          # print the time series
-          ax[delta][graph] = self.add_timeseries_graph(
-              delta, ax[delta][graph], subplot_spec[delta][graph], data)
-        elif graph == 'distro':
-          # print the distribution
-          self.add_distribution_graph(delta, ax[delta][graph], data)
-        i += 1
+      if graph == 'time':
+        # print the time series
+        ax[delta][graph] = self.add_timeseries_graph(
+            delta, ax[delta][graph], subplot_spec[delta][graph], data)
+      elif graph == 'distro':
+        # print the distribution
+        self.add_distribution_graph(delta, ax[delta][graph], data, traffic)
 
     # main title
     plt.suptitle(self._plot_title, fontsize='x-small')
@@ -480,9 +467,6 @@ class Plotter(object):
                      notch=True,
                      bootstrap=5000,
                      patch_artist=True)
-    if delta == 'delta4':
-      axl.set_yscale('log')
-      axr.set_yscale('log')
 
     # change the names of the distro ticks
     plt.setp(axl, xticklabels=data.keys())
@@ -538,10 +522,16 @@ class Plotter(object):
     axr.tick_params(axis='both', which='minor', labelsize=8)
     return (axl, axr)
 
-  def add_distribution_graph(self, delta, ax, data):
+  def add_distribution_graph(self, delta, ax, data, traffic):
     """Print the time series."""
     for i in range(len(data)):
       df_local = data.values()[i]
+      if traffic != '-':
+        df_local = df_local[df_local.traffic == traffic]
+      # pylint: disable=g-explicit-length-test
+      if len(df_local.delta.values) == 0:
+        continue
+      # pylint: enable=g-explicit-length-test
       direction = data.keys()[i]
       color, _ = DIR_CONN_COLOR_D[delta][direction]
 
@@ -571,7 +561,7 @@ class Plotter(object):
     # ax[delta]['head'].set_xlabel('%s value (sec)' % delta,
     #                              fontsize='xx-small')
     # ax[delta]['head'].set_ylabel('Head PDF (absolute)', fontsize='x-small')
-    ax.set_xlabel('%s value (sec)' % delta, fontsize='xx-small')
+    ax.set_xlabel('%s %s value (sec)' % (traffic, delta), fontsize='xx-small')
     ax.set_ylabel('Tail PDF (absolute)', fontsize='x-small')
     ax.tick_params(axis='both', which='major', labelsize=10)
     ax.tick_params(axis='both', which='minor', labelsize=8)
