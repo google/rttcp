@@ -157,7 +157,7 @@ $ ./rttcp.py plot --type "flow" -i trace.pcap.flow.txt --title "flow analysis, t
 $ ./rttcp.py plot --type "flow" -i trace.pcap.flow.txt --title "flow analysis, trace.fibertest.pcap" --src-reverse 192.168 -o trace.fibertest.pcap.flow.pdf
 ```
 
-![Figure 2](example.flow.png)
+![Figure 2](doc/example.flow.png)
 
 Figure 2 shows an example of "flow" analysis result.
 
@@ -170,7 +170,7 @@ $ ./rttcp.py analyze --type "packet" -i trace.pcap -o trace.pcap.packet.txt
 $ ./rttcp.py plot --type "packet" -i trace.pcap.packet.txt --title "packet analysis, trace.fibertest.pcap" --src-reverse 192.168 -o trace.fibertest.pcap.packet.png
 ```
 
-![Figure 3](example.packet.png)
+![Figure 3](doc/example.packet.png)
 
 Figure 3 shows an example of "packet" analysis result.
 
