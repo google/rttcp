@@ -1,6 +1,11 @@
 # rttcp: A Tool To Debug The Performance of a Network Link Using TCP
 
-# Overview
+Copyright 2017 Google Inc.
+
+This is not an official Google product.
+
+
+# Introduction
 
 rttcp is a tool to analyze the performance of a network link from a packet
 trace containing TCP traffic.
