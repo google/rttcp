@@ -200,11 +200,18 @@ class Plotter(object):
     # ax_ip_rate = fig.add_subplot(4, 1, 4)
 
     # shift x axis
-    time_shift = int(df[:1].first_ts)
+    time_shift = float(df[:1].first_ts)
     format_shift = ticker.FuncFormatter(
         lambda x, pos: '{0:g}'.format(x - time_shift))
     for ax in (ax_tcp_rate, ax_delta1, ax_tcp_total, ax_tcp_extra_bytes):
       ax.xaxis.set_major_formatter(format_shift)
+      xticks = ax.get_xticks() + (time_shift - int(time_shift))
+      ax.set_xticks(xticks)
+      xmin = float(df.first_ts[:1])
+      xmax = float(df.first_ts[-1:])
+      if xmin < xmax:
+        extra_space = (xmax - xmin) * .05 / 2
+        ax.set_xlim(xmin - extra_space, xmax + extra_space)
 
     # scale y axis
     # ax_pps.yaxis.set_major_formatter(self._format_kilo)
@@ -425,7 +432,7 @@ class Plotter(object):
       label = '%s "src %s %s"' % (direction, '==' if direction == 'rev'
                                   else '!=', self._src_reverse)
       # get x-axis shift
-      time_shift[direction] = int(df_local[:1].timestamp)
+      time_shift[direction] = float(df_local[:1].timestamp)
       df_all = df_local
 
       # for (src, dst, color, marker) in separate_conn_l:
@@ -510,6 +517,16 @@ class Plotter(object):
     format_shift = ticker.FuncFormatter(
         lambda x, pos: '{0:g}'.format(x - min_time_shift))
     axr.xaxis.set_major_formatter(format_shift)
+    xticks = axr.get_xticks() + (min_time_shift - int(min_time_shift))
+    axr.set_xticks(xticks)
+    # pylint: disable=g-explicit-length-test
+    xmin = min([(float(d.timestamp[:1]) if len(d) > 0 else float('nan'))
+                for d in data.values()])
+    xmax = max([(float(d.timestamp[-1:]) if len(d) > 0 else float('nan'))
+                for d in data.values()])
+    # pylint: enable=g-explicit-length-test
+    extra_space = (xmax - xmin) * .05 / 2
+    axr.set_xlim(xmin - extra_space, xmax + extra_space)
 
     # plot labels
     axr.set_xlabel('trace timestamp (sec) -- ' + total_line,
