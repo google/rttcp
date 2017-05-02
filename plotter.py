@@ -37,6 +37,7 @@ NUM_LARGEST_BINS = 10
 MIN_SEPARATION = 0.05
 MIN_FLOW_GOODPUT = 5000000
 
+NUM_MEAN_MARKERS = 10
 
 DIR_CONN_COLOR_D = {
     'delta1': {
@@ -350,11 +351,11 @@ class Plotter(object):
       subplot_spec[delta] = {}
       # get the data frame to analyze here
       data = {}
-      for d in ('fwd', 'rev'):
-        data[d] = df[(df.dir == d) & (df.type == delta)]
+      for direction in ('fwd', 'rev'):
+        data[direction] = df[(df.dir == direction) & (df.type == delta)]
         if delta == 'delta4':
           # remove the heads of the trains (hystart_ack_delta in tcp_cubic.c)
-          data[d] = data[d][(data[d].delta < 0.002)]
+          data[direction] = data[direction][(data[direction].delta < 0.002)]
       # print the data frames
       for graph in graph_l:
         # ax[delta][graph] = fig.add_subplot(4, 2, position_l[i])
@@ -417,14 +418,14 @@ class Plotter(object):
       df_local = data.values()[i]
       if len(df_local) == 0:  # pylint: disable=g-explicit-length-test
         continue
-      d = data.keys()[i]
-      color, marker = DIR_CONN_COLOR_D[delta][d]
+      direction = data.keys()[i]
+      color, marker = DIR_CONN_COLOR_D[delta][direction]
 
       # get the time series label
-      label = '%s "src %s %s"' % (d, '==' if d == 'rev' else '!=',
-                                  self._src_reverse)
+      label = '%s "src %s %s"' % (direction, '==' if direction == 'rev'
+                                  else '!=', self._src_reverse)
       # get x-axis shift
-      time_shift[d] = int(df_local[:1].timestamp)
+      time_shift[direction] = int(df_local[:1].timestamp)
       df_all = df_local
 
       # for (src, dst, color, marker) in separate_conn_l:
@@ -442,6 +443,16 @@ class Plotter(object):
                label=label,
                color=color, markersize=3)
 
+      # calculate and plot the per-second averages
+      x_l = []
+      y_l = []
+      for d in np.array_split(df_all, NUM_MEAN_MARKERS):
+        if len(d) == 0:  # pylint: disable=g-explicit-length-test
+          continue
+        x_l.append(d.timestamp.mean())
+        y_l.append(d.delta.mean())
+      axr.plot(x_l, y_l, color='w', marker='*', markeredgecolor=color)
+
       # calculate the delta percentiles
       delta_quantile_50 = df_local.delta.quantile(q=0.50)
       delta_mean = df_local.delta.mean()
@@ -451,7 +462,7 @@ class Plotter(object):
       axr.axhline(y=delta_quantile_50, color=color, ls='dashed', lw=0.5)
       axr.axhline(y=delta_mean, color=color, ls='dotted', lw=0.5)
       total_line += ' %s { avg: %s median: %s stddev: %s }\n' % (
-          d,
+          direction,
           decimal_fmt(delta_mean, 'sec'),
           decimal_fmt(delta_quantile_50, 'sec'),
           decimal_fmt(delta_stddev, 'sec'))
@@ -483,14 +494,14 @@ class Plotter(object):
 
     i = 0
     for obj in bp['boxes']:
-      d = data.keys()[i]
-      color, marker = DIR_CONN_COLOR_D[delta][d]
+      direction = data.keys()[i]
+      color, marker = DIR_CONN_COLOR_D[delta][direction]
       plt.setp(obj, color=color)
       i += 1
     i = 0
     for obj in bp['whiskers'] + bp['caps']:
-      d = data.keys()[(i / 2) % 2]
-      color, marker = DIR_CONN_COLOR_D[delta][d]
+      direction = data.keys()[(i / 2) % 2]
+      color, marker = DIR_CONN_COLOR_D[delta][direction]
       plt.setp(obj, color=color, ls='solid', lw=0.5)
       i += 1
 
@@ -514,8 +525,8 @@ class Plotter(object):
     """Print the time series."""
     for i in range(len(data)):
       df_local = data.values()[i]
-      d = data.keys()[i]
-      color, _ = DIR_CONN_COLOR_D[delta][d]
+      direction = data.keys()[i]
+      color, _ = DIR_CONN_COLOR_D[delta][direction]
 
       # # 1. print the head distro
       # df_head = df_local[df_local.delta < CUT_VALUE_HEAD_SECS]
