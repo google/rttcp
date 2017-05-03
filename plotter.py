@@ -39,6 +39,7 @@ MIN_FLOW_GOODPUT = 5000000
 
 NUM_MEAN_MARKERS = 10
 
+# per-experiment, per-direction color/marker
 DIR_CONN_COLOR_D = {
     'delta1': {
         'fwd': ['darkblue', 'x'],
@@ -58,6 +59,7 @@ DIR_CONN_COLOR_D = {
     },
 }
 
+# per-connection color/marker
 IP_CONN_COLOR_D = {
     0: ['g', 'o'],
     1: ['r', 'v'],

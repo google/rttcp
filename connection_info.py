@@ -19,27 +19,11 @@
 
 
 import sys
+import numpy as np
+
 from common import endpoint_cmp
 from common import TCP_SEQ_MAX_VALUE
 from modulo import Modulo
-
-
-# http://stackoverflow.com/questions/7716331
-def mean(lst):
-  if len(lst) < 1:
-    return float('nan')
-  return float(sum(lst)) / max(len(lst), 1)
-
-
-# http://stackoverflow.com/questions/24101524
-def median(lst):
-  lst = sorted(lst)
-  if len(lst) < 1:
-    return float('nan')
-  if len(lst) % 2 == 1:
-    return lst[((len(lst) + 1) / 2) - 1]
-  else:
-    return float(sum(lst[(len(lst) / 2) - 1:(len(lst) / 2) + 1])) /2.0
 
 
 class ConnectionInfo(object):
@@ -386,17 +370,17 @@ class ConnectionInfo(object):
                                           self._tcp_seq_first[self._dst])
       tcp_goodput_bitrate = (8. * tcp_goodput_bytes /
                              (self._last_ts - self._first_ts))
-      if (median(self._delta1_list[self._src]) <
-          median(self._delta1_list[self._dst])):
-        small_median = median(self._delta1_list[self._src])
-        small_mean = mean(self._delta1_list[self._src])
-        large_median = median(self._delta1_list[self._dst])
-        large_mean = mean(self._delta1_list[self._dst])
+      if (np.median(self._delta1_list[self._src]) <
+          np.median(self._delta1_list[self._dst])):
+        small_median = np.median(self._delta1_list[self._src])
+        small_mean = np.mean(self._delta1_list[self._src])
+        large_median = np.median(self._delta1_list[self._dst])
+        large_mean = np.mean(self._delta1_list[self._dst])
       else:
-        small_median = median(self._delta1_list[self._dst])
-        small_mean = mean(self._delta1_list[self._dst])
-        large_median = median(self._delta1_list[self._src])
-        large_mean = mean(self._delta1_list[self._src])
+        small_median = np.median(self._delta1_list[self._dst])
+        small_mean = np.mean(self._delta1_list[self._dst])
+        large_median = np.median(self._delta1_list[self._src])
+        large_mean = np.mean(self._delta1_list[self._src])
       self._f.write('%s %f %f %s %s %s %i %i %f %f %i %i %f %f %f %f %f\n' % (
           self._connhash, self._first_ts, self._last_ts,
           self._ip_proto,
