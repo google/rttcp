@@ -32,20 +32,20 @@ rttcp provides 2 analysis modes, namely "flow" and "packet".
 1. the "flow" mode provides a per-flow performance analysis. In
 particular, it provides 4 graphs:
 
-  1. per-flow goodput rate as a function of the timestamp of the first
-     packet in the flow. This is an important statistic, as it shows
-     how the different flows have performed in the experiment. On the
-     other hand, the exact performance depends on multiple factors (the
-     RTT time, the number of losses, etc.), which makes the signal noisy.
-  2. per-flow median packet RTT as a function of the timestamp of
-     the first packet in the flow. This is the most interesting signal,
-     as discussed in the [example analysis](./example.analysis.md).
-  3. per-flow total goodput as a function of the timestamp of the first
-     packet in the flow. This is a description of the test setup, for
-     validation purposes.
-  4. per-flow extra IP traffic as a function of the timestamp of the first
-     packet in the flow. This is a rough validation that there have not
-     been too many losses.
+    1. per-flow goodput rate as a function of the timestamp of the first
+       packet in the flow. This is an important statistic, as it shows
+       how the different flows have performed in the experiment. On the
+       other hand, the exact performance depends on multiple factors (the
+       RTT time, the number of losses, etc.), which makes the signal noisy.
+    2. per-flow median packet RTT as a function of the timestamp of
+       the first packet in the flow. This is the most interesting signal,
+       as discussed in the [example analysis](./example.analysis.md).
+    3. per-flow total goodput as a function of the timestamp of the first
+       packet in the flow. This is a description of the test setup, for
+       validation purposes.
+    4. per-flow extra IP traffic as a function of the timestamp of the first
+       packet in the flow. This is a rough validation that there have not
+       been too many losses.
 
 
 2. the "packet" mode provides an analysis of per-packet RTT data. We
